@@ -102,6 +102,7 @@ generate
             // The horizontal and vertical convolutions must be combined in a way that faithfully implements the Sobel convolution algorithm.
             sobel_sum[c] = convy[c] + convx[c];
 	    //sobel_sum[c] = 'h0;
+            sobel_sum[c] = (sobel_sum[c] > 12'hff) ? 12'hff : sobel_sum[c]; //DAH
             
             // *** Writing out the Sobel convolution result ***
             // This line should place the output of the Sobel convolution (the lines above) into the correct location in the output byte vector.
