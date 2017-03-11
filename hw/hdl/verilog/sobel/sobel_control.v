@@ -148,18 +148,19 @@ dffre #(IOBUF_ADDR_WIDTH)               buf_write_offset_r (                    
 // *** Row address increment ***
 // The value of this signal specifies the width of an output row.
 // Insert your code here.
-assign      buf_write_row_incr                  = 'h0;
+assign      buf_write_row_incr                  = control_n_cols - 'h2; //'h0; //input width - 2
 
 // *** Column strip increment ***
 // The value of this signal specifies the start column of the next column strip.
 // Insert your code here.
-assign      next_col_strip                      = 'h0;
+assign      next_col_strip                      = col_strip + `NUM_SOBEL_ACCELERATORS; //'h0; //current col strip + # of accelerators
 
 // *** Column strip maximum ***
 // The value of this signal is the termination condition.
 // What is the highest possible value of col_strip that indicates there are still more input pixels to process?
 // Insert your code here.
-assign      max_col_strip                       = 'h0;
+assign      max_col_strip                       = control_n_cols - `NUM_SOBEL_ACCELERATORS - 'h2; //'h0; //# of cols - # of accelerators
+//TODO: check if it's actually #cols - #accel
 
 generate
 for (i = 0; i < `NUM_SOBEL_ACCELERATORS; i = i + 1) begin: sobel_write_en
@@ -196,7 +197,7 @@ always @ (*) begin
             if (go) begin
                 // *** Row 1 loading state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                state_next                      = STATE_LOADING_2;
             end
         end
         
@@ -204,7 +205,7 @@ always @ (*) begin
             if (go) begin
                 // *** Row 2 loading state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                state_next                      = STATE_LOADING_3;
             end
         end
         
@@ -212,7 +213,7 @@ always @ (*) begin
             if (go) begin
                 // *** Row 3 loading state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                state_next                      = STATE_PROCESSING_CALC;
             end
         end
         
@@ -220,7 +221,12 @@ always @ (*) begin
             if (go) begin
                 // *** Calculation state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                if (row_counter == control_n_rows - 'h3) begin
+			state_next               = STATE_PROCESSING_LOADSS_LAST; //TODO: check if row_counter is 0 index (if not, change condition)
+		end
+		else begin
+			state_next 		 = STATE_PROCESSING_LOADSS;
+		end
             end
         end
         
@@ -228,7 +234,7 @@ always @ (*) begin
             if (go) begin
                 // *** Next row loading state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                state_next                      = STATE_PROCESSING_CALC;
             end
         end
         
@@ -236,7 +242,12 @@ always @ (*) begin
             if (go) begin
                 // *** Last-row-in-column-strip calculation state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                if (col_strip >= max_col_strip) begin
+		 	state_next              = STATE_PROCESSING_DONE; //TODO: check if condition should be > or >= or ==
+		end
+		else begin
+			state_next		= STATE_LOADING_1;
+		end
             end
         end
         
@@ -244,7 +255,7 @@ always @ (*) begin
             if (go) begin
                 // *** Last-row-in-column loading state ***
                 // Insert your state transition code here.
-                state_next                      = STATE_ERROR;
+                state_next                      = STATE_PROCESSING_CALC_LAST;
             end
         end
         
@@ -284,62 +295,62 @@ end
 // Insert your code where indicated.
 always @ (*) begin
     // What is the correct default behavior? Place your command here.
-    row_op                                      = 'h0;
+    row_op                                      = `SOBEL_ROW_OP_HOLD;
     
     case (state)
         STATE_WAIT: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
         
         STATE_LOADING_1: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_SHIFT_ROW;
         end
         
         STATE_LOADING_2: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_SHIFT_ROW;
         end
         
         STATE_LOADING_3: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_SHIFT_ROW;
         end
         
         STATE_PROCESSING_CALC: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
         
         STATE_PROCESSING_LOADSS: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_SHIFT_ROW;
         end
         
         STATE_PROCESSING_CALC_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
         
         STATE_PROCESSING_LOADSS_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_SHIFT_ROW;
         end
         
         STATE_PROCESSING_DONE: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
         
         STATE_ERROR: begin
             // What happens in case of an error? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
         
         default: begin
             // What happens in the default (unexpected) case? Insert your code here. If nothing changes, you can remove this case completely.
-            row_op                              = 'h0;
+            row_op                              = `SOBEL_ROW_OP_HOLD;
         end
     endcase
 end
@@ -354,59 +365,46 @@ always @ (*) begin
     row_counter_next                            = row_counter;
     
     case (state)
+        
         STATE_WAIT: begin
-            // What should the starting value be? Insert your code here.
-            row_counter_next                    = 'h0;
-        end
-        
-        STATE_LOADING_1: begin
+	    //What should the starting value be? Insert your code here.
+	    row_counter_next			= 'h1; //TODO: is this right?
+	end
+
+	STATE_LOADING_1: begin
+	    // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
+	    row_counter_next			= 'h1;
+	end
+
+	STATE_PROCESSING_CALC: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
-        end
-        
-        STATE_LOADING_2: begin
-            // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
-        end
-        
-        STATE_LOADING_3: begin
-            // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
-        end
-        
-        STATE_PROCESSING_CALC: begin
-            // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
+            row_counter_next                    = row_counter + 'h1;
         end
         
         STATE_PROCESSING_LOADSS: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
+            row_counter_next                    = row_counter;
         end
         
         STATE_PROCESSING_CALC_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
+//            if (col_strip <= max_col_strip) begin
+//		    row_counter_next            = 'h0;
+//	    end
+//	    else begin
+		    row_counter_next 		= row_counter;
+//	    end
         end
         
         STATE_PROCESSING_LOADSS_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
+            row_counter_next                    = row_counter;
         end
         
-        STATE_PROCESSING_DONE: begin
-            // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
-        end
-        
-        STATE_ERROR: begin
-            // What happens in case of an error? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
-        end
         
         default: begin
             // What happens in the default (unexpected) case? Insert your code here. If nothing changes, you can remove this case completely.
-            row_counter_next                    = 'h0;
+            row_counter_next                    = row_counter;
         end
     endcase
 end

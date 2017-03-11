@@ -75,7 +75,11 @@ generate
             
             // Combine the values above in a way that faithfully implements Sobel.
             // You may declare more signals as needed.
-            convx[c]   = 'h0; 
+            convx[c] = convx31[c] + convx32[c] + convx33[c] - convx11[c] - convx12[c] - convx13[c];
+	    if ($signed(convx[c]) < 0)
+		convx[c] = -$signed(convx[c]);
+	    //TODO: need this line?? sobel = (sobel > 255) ? 255 : sobel;
+	    //convx[c]   = 'h0;
             
             // *** Calculation of the vertical Sobel convolution ***
             // Each "convy" value corresponds to an input to that calculation, a different pixel in the 9-by-9 grid.
@@ -89,11 +93,15 @@ generate
             
             // Combine the values above in a way that faithfully implements Sobel.
             // You may declare more signals as needed.
-            convy[c]   = 'h0;
+            convy[c] = convy13[c] + convy23[c] + convy33[c] - convy11[c] - convy21[c] - convy31[c];
+	    if ($signed(convy[c]) < 0)
+		convy[c] = -$signed(convy[c]);
+	    //convy[c]   = 'h0;
             
             // *** Calculation of the overall Sobel convolution result ***
             // The horizontal and vertical convolutions must be combined in a way that faithfully implements the Sobel convolution algorithm.
-            sobel_sum[c] = 'h0;
+            sobel_sum[c] = convy[c] + convx[c];
+	    //sobel_sum[c] = 'h0;
             
             // *** Writing out the Sobel convolution result ***
             // This line should place the output of the Sobel convolution (the lines above) into the correct location in the output byte vector.
