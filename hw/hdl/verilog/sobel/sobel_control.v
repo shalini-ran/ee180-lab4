@@ -500,6 +500,7 @@ always @ (*) begin
                 // Once the control signal is asserted, does something need to happen?
                 // Think about what the next state is going to be and what data the accelerator expects to get.
                 //buf_read_offset_next            = 'h0;
+                //buf_read_offset_next            = 'h0; //DAH
                 buf_read_offset_next            = control_n_cols; //DAH
             end else begin
                 // If there is no control signal, just read from the beginning of the image.
@@ -511,7 +512,7 @@ always @ (*) begin
         STATE_LOADING_1: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
-            buf_read_offset_next                = buf_read_offset;
+            buf_read_offset_next                = buf_read_offset + control_n_cols; //for LOAD3
         end
         
         STATE_LOADING_2: begin
@@ -522,32 +523,34 @@ always @ (*) begin
         STATE_LOADING_3: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
-            buf_read_offset_next                = buf_read_offset;
+            buf_read_offset_next                = buf_read_offset + control_n_cols; //for next LOADSS
         end
         
         STATE_PROCESSING_CALC: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
-            buf_read_offset_next                = buf_read_offset + control_n_cols;
+            buf_read_offset_next                = buf_read_offset;
         end
         
         STATE_PROCESSING_LOADSS: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
-            buf_read_offset_next                = buf_read_offset;
+            buf_read_offset_next                = buf_read_offset + control_n_cols;
         end
         
         STATE_PROCESSING_CALC_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
 	    //row: reset to 1, col: next_col_strip
-            buf_read_offset_next                = (col_strip >= max_col_strip) ? control_n_cols : control_n_cols + next_col_strip;
+            //buf_read_offset_next                = (col_strip >= max_col_strip) ? control_n_cols : control_n_cols + next_col_strip;
+            buf_read_offset_next                = buf_read_offset + control_n_cols; //for LD2
         end
         
         STATE_PROCESSING_LOADSS_LAST: begin
             // What happens in this state? Insert your code here. If nothing changes, you can remove this case completely.
             //buf_read_offset_next                = 'h0;
-            buf_read_offset_next                = buf_read_offset;
+	    //prepare load address for PROC_CALC_LAST which is further used at LOAD1 as the new row , which is the first row of the next col_strip
+            buf_read_offset_next                = next_col_strip;
         end
         
         STATE_PROCESSING_DONE: begin
